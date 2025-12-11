@@ -1,0 +1,62 @@
+name: Build, Publish & Deploy (GHCR)
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ghcr.io/${{ github.repository_owner }}/abhinitee-plast:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install & Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image to GHCR
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/abhinitee-plast:latest
+
+  deploy:
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.8.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H 147.93.110.204 >> ~/.ssh/known_hosts
+
+      - name: Trigger remote deploy.sh
+        run: |
+          ssh -o StrictHostKeyChecking=no vicky@147.93.110.204 "sudo /var/www/deploy.sh /var/www/abhiniteeplast docker-compose.frontend.yml ghcr.io/${{ github.repository_owner }}/abhinitee-plast:latest"
