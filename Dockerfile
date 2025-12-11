@@ -1,16 +1,7 @@
-# Dockerfile (multi-stage)
-### Build stage ###
-FROM node:18-alpine AS build
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --silent
-COPY . .
-RUN npm run build
-
-### Production stage ###
+# Use a tiny nginx image and copy pre-built static files into it.
+# This assumes the workflow already performs `npm ci` + `npm run build` and
+# produces a `dist/` folder at repo root.
 FROM nginx:stable-alpine
-COPY --from=build /app/build /usr/share/nginx/html
-# optional: add a small nginx conf if you need SPA fallback
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY dist/ /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
