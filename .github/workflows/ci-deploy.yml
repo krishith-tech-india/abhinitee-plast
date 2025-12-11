@@ -59,4 +59,4 @@ jobs:
 
       - name: Trigger remote deploy.sh
         run: |
-          ssh -o StrictHostKeyChecking=no vicky@147.93.110.204 "sudo /var/www/deploy.sh /var/www/abhiniteeplast docker-compose.frontend.yml ghcr.io/${{ github.repository_owner }}/abhinitee-plast:latest"
+          ssh -o StrictHostKeyChecking=no vicky@147.93.110.204 "/var/www/deploy.sh /var/www/abhiniteeplast docker-compose.frontend.yml ghcr.io/${{ github.repository_owner }}/abhinitee-plast:latest"
